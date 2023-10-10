@@ -8,6 +8,7 @@ import {
   createInitializeMintInstruction,
   createMintToInstruction,
   getAssociatedTokenAddressSync,
+  getOrCreateAssociatedTokenAccount,
   MINT_SIZE,
   TOKEN_PROGRAM_ID,
   transfer,
@@ -28,7 +29,7 @@ import {
   newLogSection,
 } from "./util";
 
-const connection = new Connection("http://localhost:8899", {
+const connection = new Connection("https://api.devnet.solana.com", {
   commitment: "confirmed",
   confirmTransactionInitialTimeout: 60000,
 });
@@ -386,27 +387,15 @@ export async function transferTokens(
   async function checkAndAddAssociatedTokenAccountInstruction(
     owner: PublicKey
   ): Promise<PublicKey> {
-    const associatedTokenAddress = getAssociatedTokenAddressSync(
+    const associatedTokenAddress = await getOrCreateAssociatedTokenAccount(
+      connection,
+      payerKeypair,
       mintPublicKey,
-      fromKeypair.publicKey
+      owner,
+      true
     );
-    const associatedTokenAccountInfo = await connection.getAccountInfo(
-      associatedTokenAddress
-    );
-    if (
-      !associatedTokenAccountInfo ||
-      associatedTokenAccountInfo.lamports === 0
-    ) {
-      ixList.push(
-        createAssociatedTokenAccountInstruction(
-          payerKeypair.publicKey,
-          associatedTokenAddress,
-          owner,
-          mintPublicKey
-        )
-      );
-    }
-    return associatedTokenAddress;
+
+    return associatedTokenAddress.address;
   }
   const fromAtaAddress = await checkAndAddAssociatedTokenAccountInstruction(
     fromKeypair.publicKey
@@ -422,8 +411,11 @@ export async function transferTokens(
     fromAtaAddress,
     toAtaAddress,
     fromKeypair,
-    quantity
+    quantity,
+    [],
+    { skipPreflight: true }
   );
   newLogSection();
   await logTransaction(connection, signature);
+  return signature;
 }

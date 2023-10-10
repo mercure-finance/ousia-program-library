@@ -5,7 +5,7 @@ use {
     anchor_spl::{associated_token, token},
 };
 
-declare_id!("Fa63c9tRsE3uJ3GQ7q22KAWq38pq4tfyR2AkqpCprgay");
+declare_id!("G8w2tPQCb8667G6GxFhKcmbRgtZhvr5gxoW32N7mJsMu");
 
 #[program]
 mod ousia_burn_and_mint {

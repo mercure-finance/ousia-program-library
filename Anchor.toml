@@ -2,15 +2,20 @@
 seeds = false
 skip-lint = false
 [programs.localnet]
-ousia-burn-and-mint = "Fa63c9tRsE3uJ3GQ7q22KAWq38pq4tfyR2AkqpCprgay"
+collateralized_debt = "G8w2tPQCb8667G6GxFhKcmbRgtZhvr5gxoW32N7mJsMu"
+ousia_burn_and_mint = "HrDmYNghkxXBWEfQTt4ZdpMdBc2MNbtJsjPJA6dtNUzP"
+
+[programs.devnet]
+collateralized_debt = "G8w2tPQCb8667G6GxFhKcmbRgtZhvr5gxoW32N7mJsMu"
+ousia_burn_and_mint = "HrDmYNghkxXBWEfQTt4ZdpMdBc2MNbtJsjPJA6dtNUzP"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "Localnet"
+cluster = "devnet"
 wallet = "/Users/devenv/.config/solana/id.json"
 
 [scripts]
-test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
 match = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/transactionMatcher.ts"
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/collateralized-debt.ts"
