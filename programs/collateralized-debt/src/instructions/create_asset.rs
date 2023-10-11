@@ -1,7 +1,9 @@
 use std::ops::Deref;
 
 use anchor_spl::token::Token;
+use mpl_token_metadata::instruction as mpl_instruction;
 use pyth_sdk_solana::state::load_price_account;
+use solana_program::program::{invoke, invoke_signed};
 
 use {
     anchor_lang::prelude::*,
@@ -15,6 +17,9 @@ pub fn create_asset(
     reverse_quotes: bool,
     interest_rate: u8,
     min_collateral_ratio: u16,
+    name: String,
+    symbol: String,
+    uri: String,
 ) -> Result<()> {
     let asset_account = &mut ctx.accounts.asset_account;
 
@@ -22,6 +27,45 @@ pub fn create_asset(
     asset_account.reversed_quote = reverse_quotes;
     asset_account.interest_rate_bp = interest_rate;
     asset_account.min_collateral_ratio = min_collateral_ratio;
+
+    let mint_account = &mut ctx.accounts.mint_account.key();
+
+    let pda_seeds = &[
+        b"mint-authority",
+        mint_account.as_ref(),
+        &[*ctx.bumps.get("mint_authority").unwrap()],
+    ];
+    let pda_signer = &[&pda_seeds[..]];
+
+    invoke_signed(
+        &mpl_instruction::create_metadata_accounts_v3(
+            ctx.accounts.token_metadata_program.key(), // Program ID (the Token Metadata Program)
+            ctx.accounts.metadata_account.key(),       // Metadata account
+            ctx.accounts.mint_account.key(),           // Mint account
+            ctx.accounts.mint_authority.key(),         // Mint authority
+            ctx.accounts.signer.key(),                 // Payer
+            ctx.accounts.mint_authority.key(),         // Update authority
+            name,                                      // Name
+            symbol,                                    // Symbol
+            uri,                                       // URI
+            None,                                      // Creators
+            0,                                         // Seller fee basis points
+            true,                                      // Update authority is signer
+            false,                                     // Is mutable
+            None,                                      // Collection
+            None,                                      // Uses
+            None,                                      // Collection Details
+        ),
+        &[
+            ctx.accounts.metadata_account.to_account_info(),
+            ctx.accounts.mint_account.to_account_info(),
+            ctx.accounts.mint_authority.to_account_info(),
+            ctx.accounts.signer.to_account_info(),
+            ctx.accounts.mint_authority.to_account_info(),
+            ctx.accounts.rent.to_account_info(),
+        ],
+        pda_signer,
+    )?;
 
     Ok(())
 }
@@ -40,12 +84,16 @@ pub struct CreateAsset<'info> {
         seeds = [b"asset_account", asset_account.key().as_ref()],
         bump,
         payer = signer,
-        mint::decimals = 9,
+        mint::decimals = 6,
         mint::authority = mint_authority.key(),
         mint::freeze_authority = mint_authority.key(),
 
     )]
     pub mint_account: Account<'info, Mint>,
+
+    /// CHECK: We're about to create this with Metaplex
+    #[account(mut)]
+    pub metadata_account: UncheckedAccount<'info>,
 
     #[account(seeds = [b"mint-authority", mint_account.key().as_ref()], bump)]
     pub mint_authority: SystemAccount<'info>,
@@ -53,6 +101,11 @@ pub struct CreateAsset<'info> {
     pub token_program: Program<'info, Token>,
 
     pub system_program: Program<'info, System>,
+
+    /// CHECK: Metaplex will check this
+    pub token_metadata_program: UncheckedAccount<'info>,
+
+    pub rent: Sysvar<'info, Rent>,
 }
 
 #[derive(Clone)]

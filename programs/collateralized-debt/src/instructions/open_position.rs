@@ -35,6 +35,9 @@ pub fn open_position(
     let price = price_feed.price;
 
     position_account.owner = ctx.accounts.signer.key();
+    position_account.amount = mint_amount;
+    position_account.mint = ctx.accounts.mint_account.key();
+    position_account.create_key = ctx.accounts.create_key.key();
 
     // normalized means converted to floating point
     let normalized_price = (price as f64) / (10f64.powi(price_feed.expo));
@@ -155,7 +158,6 @@ pub fn open_position(
         authority: ctx.accounts.mint_authority.to_account_info(),
     };
 
-    // TODO
     let cpi_program = ctx.accounts.token_program.to_account_info();
     let cpi_context = CpiContext::new_with_signer(cpi_program, cpi_accounts, pda_signer);
     anchor_spl::token_interface::mint_to(cpi_context, mint_amount)?;
@@ -164,7 +166,7 @@ pub fn open_position(
 }
 
 #[derive(Accounts)]
-#[instruction(minting_token_reverse_quotes: bool, _interest_rate: u8)]
+#[instruction(_mint_amount: u64, minting_token_reverse_quotes: bool)]
 pub struct OpenPosition<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
@@ -182,7 +184,7 @@ pub struct OpenPosition<'info> {
         mut,
         seeds = [b"asset_account", asset_account.key().as_ref()],
         bump,
-        mint::decimals = 9,
+        mint::decimals = 6,
         mint::authority = mint_authority.key(),
         mint::freeze_authority = mint_authority.key(),
     )]

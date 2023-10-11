@@ -2,11 +2,11 @@
 seeds = false
 skip-lint = false
 [programs.localnet]
-collateralized_debt = "G8w2tPQCb8667G6GxFhKcmbRgtZhvr5gxoW32N7mJsMu"
+collateralized_debt = "EXeqAfY6BiBZbvbdGsw1EZgXapQMrJeLkGhEVCigAF6u"
 ousia_burn_and_mint = "HrDmYNghkxXBWEfQTt4ZdpMdBc2MNbtJsjPJA6dtNUzP"
 
 [programs.devnet]
-collateralized_debt = "G8w2tPQCb8667G6GxFhKcmbRgtZhvr5gxoW32N7mJsMu"
+collateralized_debt = "EXeqAfY6BiBZbvbdGsw1EZgXapQMrJeLkGhEVCigAF6u"
 ousia_burn_and_mint = "HrDmYNghkxXBWEfQTt4ZdpMdBc2MNbtJsjPJA6dtNUzP"
 
 [registry]

@@ -10,7 +10,7 @@ use error::ErrorCode as ProgramError;
 
 // This is your program's public key and it will update
 // automatically when you build the project.
-declare_id!("G8w2tPQCb8667G6GxFhKcmbRgtZhvr5gxoW32N7mJsMu");
+declare_id!("EXeqAfY6BiBZbvbdGsw1EZgXapQMrJeLkGhEVCigAF6u");
 
 #[program]
 mod collateralized_debt {
@@ -21,8 +21,19 @@ mod collateralized_debt {
         reverse_quotes: bool,
         interest_rate: u8,
         min_collateral_ratio: u16,
+        name: String,
+        symbol: String,
+        uri: String,
     ) -> Result<()> {
-        instructions::create_asset(ctx, reverse_quotes, interest_rate, min_collateral_ratio)
+        instructions::create_asset(
+            ctx,
+            reverse_quotes,
+            interest_rate,
+            min_collateral_ratio,
+            name,
+            symbol,
+            uri,
+        )
     }
 
     pub fn open_position(
@@ -31,6 +42,15 @@ mod collateralized_debt {
         minting_token_reverse_quotes: bool,
     ) -> Result<()> {
         open_position::open_position(ctx, mint_amount, minting_token_reverse_quotes)
+    }
+
+    pub fn close_position(
+        ctx: Context<ClosePosition>,
+        minting_token_reverse_quotes: bool,
+        feed_pubkey: Pubkey,
+        create_key: Pubkey,
+    ) -> Result<()> {
+        close_position::close_position(ctx, minting_token_reverse_quotes, feed_pubkey, create_key)
     }
 
     pub fn liquidate(ctx: Context<LiquidatePosition>) -> Result<()> {
@@ -82,6 +102,7 @@ mod collateralized_debt {
         Ok(())
     }
 
+    // this instruction is deprecated
     pub fn collect_interest(ctx: Context<CollectInterest>) -> Result<()> {
         let clock = &ctx.accounts.clock;
 
@@ -89,7 +110,6 @@ mod collateralized_debt {
             clock.unix_timestamp > clock.unix_timestamp + 60 * 60 * 24,
             "The last collected interest wasn't collected more than 24h ago"
         );
-        ctx.accounts.position_account.last_collected_interest = clock.unix_timestamp;
 
         Ok(())
     }
@@ -116,7 +136,9 @@ pub struct CollectInterest<'info> {
 #[account]
 pub struct PositionAccount {
     owner: Pubkey,
-    last_collected_interest: i64,
+    mint: Pubkey,
+    amount: u64,
+    create_key: Pubkey,
 }
 
 #[account]

@@ -41,7 +41,7 @@ describe("ousia-program-library", () => {
   );
 
   const euroPythFeed = new anchor.web3.PublicKey(
-    "E36MyBbavhYKHVLWR79GiReNNnBDiHj6nWA7htbkNZbh"
+    "4GqTjGm686yihQ1m1YdTsSvfm4mNfadv6xskzgCYWNC5"
   );
 
   const assetAccount = anchor.web3.PublicKey.findProgramAddressSync(
@@ -98,13 +98,33 @@ describe("ousia-program-library", () => {
     program.programId
   )[0];
 
+  const TOKEN_METADATA_PROGRAM_ID = new anchor.web3.PublicKey(
+    "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
+  );
+
+  const metadataAddress = anchor.web3.PublicKey.findProgramAddressSync(
+    [
+      Buffer.from("metadata"),
+      TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+      mintAccount.toBuffer(),
+    ],
+    TOKEN_METADATA_PROGRAM_ID
+  )[0];
+
   before(async () => {
     console.log("before");
   });
 
   it("Create an asset", async () => {
     const signature = await program.methods
-      .createNewAsset(false, 2, 150)
+      .createNewAsset(
+        false,
+        2,
+        150,
+        "Mercure Gold",
+        "mXAU",
+        "https://raw.githubusercontent.com/ousia-finance/token-metadata/main/gold.json"
+      )
       .accounts({
         signer: signer.publicKey,
         assetAccount,
@@ -113,8 +133,11 @@ describe("ousia-program-library", () => {
         priceFeed: euroPythFeed,
         systemProgram: anchor.web3.SystemProgram.programId,
         tokenProgram: TOKEN_PROGRAM_ID,
+        metadataAccount: metadataAddress,
+        tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
+        rent: anchor.web3.SYSVAR_RENT_PUBKEY,
       })
-      .rpc({ skipPreflight: false });
+      .rpc({ skipPreflight: true });
     await program.provider.connection.confirmTransaction(signature);
     console.log(signature);
   });
@@ -132,6 +155,10 @@ describe("ousia-program-library", () => {
     console.log("signer", signer.publicKey.toBase58());
     console.log("mint authority", signer.publicKey.toBase58());
 
+    const data = await program.account.assetAccount.fetch(assetAccount);
+
+    console.log("asset account data", data);
+
     // TO-DO Figure out why it sends to same address
 
     const transfer = await transferTokens(
@@ -146,7 +173,7 @@ describe("ousia-program-library", () => {
     program.provider.connection.confirmTransaction(transfer);
 
     const signature = await program.methods
-      .openPosition(new anchor.BN(1 * 10 ** 9), false)
+      .openPosition(new anchor.BN(0.000000001 * 10 ** 6), false)
       .accounts({
         signer: signer.publicKey,
         assetAccount,
@@ -173,6 +200,44 @@ describe("ousia-program-library", () => {
         },
       ])
       .signers([signer, createKey])
+      .rpc({ skipPreflight: true });
+
+    console.log(signature);
+
+    const verifyOwnerAdress = await program.account.positionAccount.all([
+      {
+        memcmp: {
+          offset: 8,
+          bytes: signer.publicKey.toBase58(),
+        },
+      },
+      {
+        memcmp: {
+          offset: 40,
+          bytes: mintAccount.toBase58(),
+        },
+      },
+    ]);
+
+    verifyOwnerAdress.map((item) => {
+      console.log("create keys", item.account.createKey.toBase58());
+    });
+  });
+
+  it("Close a position", async () => {
+    const signature = await program.methods
+      .closePosition(false, euroPythFeed, createKey.publicKey)
+      .accounts({
+        signer: signer.publicKey,
+        assetAccount,
+        mintAccount,
+        mintAuthority: mintAuthorityAccount,
+        associatedTokenAccount: signerMintATA,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        positionAccount,
+        systemProgram: anchor.web3.SystemProgram.programId,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
       .rpc({ skipPreflight: true });
 
     console.log(signature);
