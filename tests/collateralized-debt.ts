@@ -41,7 +41,7 @@ describe("ousia-program-library", () => {
   );
 
   const euroPythFeed = new anchor.web3.PublicKey(
-    "4GqTjGm686yihQ1m1YdTsSvfm4mNfadv6xskzgCYWNC5"
+    "BwkRMkWjfMvWeFLqfQzwhumQan4CxNtyQRbKxtkV4yzi"
   );
 
   const assetAccount = anchor.web3.PublicKey.findProgramAddressSync(
@@ -120,10 +120,10 @@ describe("ousia-program-library", () => {
       .createNewAsset(
         false,
         2,
-        150,
-        "Mercure Gold",
-        "mXAU",
-        "https://raw.githubusercontent.com/ousia-finance/token-metadata/main/gold.json"
+        120,
+        "Mercure Coinbase",
+        "mCOIN",
+        "https://raw.githubusercontent.com/ousia-finance/token-metadata/main/coinbase.json"
       )
       .accounts({
         signer: signer.publicKey,

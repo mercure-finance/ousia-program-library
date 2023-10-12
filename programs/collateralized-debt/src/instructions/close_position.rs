@@ -57,7 +57,7 @@ pub struct ClosePosition<'info> {
     #[account(seeds = [b"asset".as_ref(), price_feed.as_ref(), &[minting_token_reverse_quotes as u8]], bump)]
     pub asset_account: Account<'info, AssetAccount>,
 
-    #[account(mut, seeds = [b"position".as_ref(), asset_account.key().as_ref(), create_key.key().as_ref()], bump)]
+    #[account(mut, seeds = [b"position".as_ref(), asset_account.key().as_ref(), create_key.key().as_ref()], bump, close = signer)]
     pub position_account: Account<'info, PositionAccount>,
 
     #[account(
